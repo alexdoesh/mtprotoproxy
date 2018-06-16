@@ -23,11 +23,16 @@ try:
 
     def create_aes_cbc(key, iv):
         return AES.new(key, AES.MODE_CBC, iv)
-
 except ImportError:
-    print("Failed to find pycryptodome or pycrypto, using slow AES implementation",
+    try:
+        import pyaes
+        pyaes_distrib = 'package'
+    except ImportError:
+        from mtprotoproxy import pyaes
+        pyaes_distrib = 'embedded'
+
+    print('Failed to find pycryptodome or pycrypto, using slow AES implementation ({})'.format(pyaes_distrib),
           flush=True, file=sys.stderr)
-    import pyaes
 
     def create_aes_ctr(key, iv):
         ctr = pyaes.Counter(iv)
@@ -57,10 +62,10 @@ try:
 except (ValueError, OSError):
     print("Failed to increase the limit of opened files", flush=True, file=sys.stderr)
 except ImportError:
-    pass
+    resource = None
 
 
-import config
+from mtprotoproxy import config
 PORT = getattr(config, "PORT")
 USERS = getattr(config, "USERS")
 
@@ -189,7 +194,7 @@ class LayeredStreamWriterBase:
 
 class CryptoWrappedStreamReader(LayeredStreamReaderBase):
     def __init__(self, upstream, decryptor, block_size=1):
-        self.upstream = upstream
+        super().__init__(upstream)
         self.decryptor = decryptor
         self.block_size = block_size
         self.buf = bytearray()
@@ -225,7 +230,7 @@ class CryptoWrappedStreamReader(LayeredStreamReaderBase):
 
 class CryptoWrappedStreamWriter(LayeredStreamWriterBase):
     def __init__(self, upstream, encryptor, block_size=1):
-        self.upstream = upstream
+        super().__init__(upstream)
         self.encryptor = encryptor
         self.block_size = block_size
 
@@ -240,7 +245,7 @@ class CryptoWrappedStreamWriter(LayeredStreamWriterBase):
 
 class MTProtoFrameStreamReader(LayeredStreamReaderBase):
     def __init__(self, upstream, seq_no=0):
-        self.upstream = upstream
+        super().__init__(upstream)
         self.seq_no = seq_no
 
     async def read(self, buf_size):
@@ -276,7 +281,7 @@ class MTProtoFrameStreamReader(LayeredStreamReaderBase):
 
 class MTProtoFrameStreamWriter(LayeredStreamWriterBase):
     def __init__(self, upstream, seq_no=0):
-        self.upstream = upstream
+        super().__init__(upstream)
         self.seq_no = seq_no
 
     def write(self, msg):
@@ -314,7 +319,7 @@ class MTProtoCompactFrameStreamReader(LayeredStreamReaderBase):
 
 class MTProtoCompactFrameStreamWriter(LayeredStreamWriterBase):
     def __init__(self, upstream, seq_no=0):
-        self.upstream = upstream
+        super().__init__(upstream)
         self.seq_no = seq_no
 
     def write(self, data):
@@ -360,7 +365,7 @@ class ProxyReqStreamReader(LayeredStreamReaderBase):
 
 class ProxyReqStreamWriter(LayeredStreamWriterBase):
     def __init__(self, upstream, cl_ip, cl_port, my_ip, my_port):
-        self.upstream = upstream
+        super().__init__(upstream)
 
         if ":" not in cl_ip:
             self.remote_ip_port = b"\x00" * 10 + b"\xff\xff"
@@ -936,9 +941,3 @@ def main():
         loop.run_until_complete(server_v6.wait_closed())
 
     loop.close()
-
-
-if __name__ == "__main__":
-    init_ip_info()
-    print_tg_info()
-    main()
