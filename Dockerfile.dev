@@ -1,0 +1,12 @@
+FROM python:3.6.5-alpine3.6
+
+WORKDIR /mtprotoproxy
+
+RUN apk add --no-cache build-base libuv-dev
+
+COPY . ./
+RUN pip install -e .[pycryptodome,uvloop]
+
+EXPOSE 3256
+
+CMD ["mtprotoproxy"]

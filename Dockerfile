@@ -4,8 +4,8 @@ WORKDIR /mtprotoproxy
 
 COPY . ./
 RUN apk add --no-cache --virtual .build-deps \
-  build-base libffi-dev openssl-dev libuv-dev \
-    && pip install --process-dependency-links -e . \
+  build-base libuv-dev \
+    && pip install -e .[pycryptodome,uvloop] \
     && find /usr/local \
         \( -type d -a -name test -o -name tests \) \
         -o \( -type f -a -name '*.pyc' -o -name '*.pyo' \) \
@@ -20,4 +20,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && apk add --no-cache --virtual .rundeps $runDeps \
     && apk del .build-deps
 
-CMD ["./mtprotoproxy.py"]
+EXPOSE 3256
+
+ENTRYPOINT ["mtprotoproxy"]
+# CMD ["TODO"]

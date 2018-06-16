@@ -906,6 +906,12 @@ def main():
     if sys.platform == 'win32':
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
+    else:
+        try:
+            import uvloop
+            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+        except ImportError:
+            pass
 
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(loop_exception_handler)

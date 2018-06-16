@@ -38,12 +38,12 @@ setup(
     author='Alexander Bersenev',
     author_email='bay@hackerdom.ru',
     packages=get_packages(),
-    install_requires={
-        'pycryptodome;extra!="pyaes",extra!="pycrypto"'
-    },
     extras_require={
         'pyaes': [
             'pyaes',
+        ],
+        'pycryptodome': [
+            'pycryptodome'
         ],
         'pycrypto': [
             'pycrypto'
